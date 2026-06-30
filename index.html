@@ -7,17 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        html, body {
-            width: 100%;
-            overflow-x: hidden;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { width: 100%; overflow-x: hidden; }
         :root {
             color-scheme: light;
             --ink: #070707;
@@ -27,44 +18,25 @@
             --edge-gap: clamp(10px, 2.5vw, 24px);
             --content-max: 1100px;
         }
-
         body {
-            min-height: 100vh;
-            min-height: 100dvh;
-            background: #ececec;
-            color: var(--ink);
+            min-height: 100vh; min-height: 100dvh;
+            background: #ececec; color: var(--ink);
             font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
-
-        .page {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            min-height: 100dvh;
-            isolation: isolate;
-        }
-
+        .page { position: relative; display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; isolation: isolate; }
         .background {
-            position: fixed;
-            inset: 0;
-            z-index: -3;
+            position: fixed; inset: 0; z-index: -3;
             background:
                 linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.46)),
                 url("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop") center / cover no-repeat;
         }
-
         .background::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            z-index: -1;
+            content: ""; position: absolute; inset: 0; z-index: -1;
             background:
                 radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.54), transparent 30%),
                 linear-gradient(90deg, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0.05) 42%, rgba(255, 255, 255, 0.58));
             pointer-events: none;
         }
-
         .glass {
             border: 1px solid var(--stroke);
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.56), var(--glass));
@@ -75,119 +47,52 @@
             -webkit-backdrop-filter: blur(24px) saturate(155%) url(#liquid-refraction);
             backdrop-filter: blur(24px) saturate(155%) url(#liquid-refraction);
         }
-
-        .glass-inner {
-            background: rgba(255, 255, 255, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-        }
-
-        /* --- RESPONSIVE FIX ---
-           Previously: margin: var(--edge-gap) var(--edge-gap) 0 var(--edge-gap)
-           This explicit 4-value margin overrides Tailwind's mx-auto centering,
-           so the element never re-centers or scales smoothly across widths.
-           Fix: separate horizontal centering (auto) from vertical spacing,
-           and size width using min()/clamp against the viewport instead of
-           a hardcoded max-width class. */
+        .glass-inner { background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); }
         header.glass-header {
             width: min(100% - (var(--edge-gap) * 2), var(--content-max));
             margin: var(--edge-gap) auto 0 auto;
             border-radius: clamp(16px, 2vw, 24px);
             padding: clamp(10px, 1.6vw, 16px) clamp(14px, 2.4vw, 28px);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            z-index: 50;
+            display: flex; justify-content: space-between; align-items: center; gap: 12px; z-index: 50;
         }
-
-        .hero {
-            display: flex;
-            flex: 1;
-            align-items: stretch;
-            padding-top: 10px;
-        }
-
+        .hero { display: flex; flex: 1; align-items: stretch; padding-top: 10px; }
         .hero-panel {
             width: min(100% - (var(--edge-gap) * 2), var(--content-max));
             margin: 0 auto var(--edge-gap) auto;
-            flex: 1;
-            min-height: 0;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
+            flex: 1; min-height: 0; overflow-y: auto;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
             padding: clamp(16px, 4vw, 40px);
             border-radius: clamp(22px, 3.5vw, 42px);
         }
-
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
-
         h1.app-title {
-            width: 100%;
-            font-size: clamp(28px, 7vw, 64px);
-            line-height: 0.95;
-            font-weight: 900;
-            letter-spacing: -1px;
-            text-align: center;
-            text-transform: uppercase;
-            overflow-wrap: anywhere;
-            margin-bottom: clamp(16px, 3vw, 30px);
-            color: rgba(0,0,0,0.8);
+            width: 100%; font-size: clamp(28px, 7vw, 64px); line-height: 0.95; font-weight: 900;
+            letter-spacing: -1px; text-align: center; text-transform: uppercase; overflow-wrap: anywhere;
+            margin-bottom: clamp(16px, 3vw, 30px); color: rgba(0,0,0,0.8);
             text-shadow: 2px 2px 10px rgba(255,255,255,0.5);
         }
-
         input[type="number"], input[type="text"] {
-            background: rgba(255, 255, 255, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            color: var(--ink);
-            font-weight: 600;
-            transition: all 0.3s ease;
-            min-width: 0;
+            background: rgba(255, 255, 255, 0.5); border: 1px solid rgba(255, 255, 255, 0.8);
+            color: var(--ink); font-weight: 600; transition: all 0.3s ease; min-width: 0;
         }
         input[type="number"]:focus, input[type="text"]:focus {
-            background: rgba(255, 255, 255, 0.8);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.8); outline: none; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
         }
-
         .progress-bar { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-
         .svg-filter-container { position: absolute; width: 0; height: 0; pointer-events: none; }
-
         .modal-overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(8px); }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
         .modal-content { transform: scale(0.95) translateY(20px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .modal-overlay.active .modal-content { transform: scale(1) translateY(0); }
-
-        .expense-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: nowrap;
-        }
-        .expense-row label {
-            flex: 1 1 auto;
-            min-width: 0;
-        }
-        .expense-input {
-            flex: 0 0 auto;
-            width: clamp(80px, 22vw, 120px);
-        }
-
+        .expense-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: nowrap; }
+        .expense-row label { flex: 1 1 auto; min-width: 0; }
+        .expense-input { flex: 0 0 auto; width: clamp(80px, 22vw, 120px); }
         .save-indicator {
-            font-size: 11px;
-            color: rgba(0,0,0,0.45);
-            text-align: right;
-            min-height: 14px;
-            width: min(100% - (var(--edge-gap) * 2), var(--content-max));
-            margin: 4px auto 0 auto;
+            font-size: 11px; color: rgba(0,0,0,0.45); text-align: right; min-height: 14px;
+            width: min(100% - (var(--edge-gap) * 2), var(--content-max)); margin: 4px auto 0 auto;
         }
-
         @media (max-width: 720px) {
             .hero-panel { border-radius: 22px; }
             header.glass-header { border-radius: 16px; }
@@ -349,13 +254,13 @@
             saveTimeout = setTimeout(saveState, 600);
         }
 
-        async function saveState() {
+        function saveState() {
             try {
-                await window.storage.set(STORAGE_KEY, JSON.stringify({
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
                     categories,
                     inputValues,
                     incomeValue: incomeInput.value || 0
-                }), false);
+                }));
                 saveIndicator.textContent = 'Saved';
                 setTimeout(() => { saveIndicator.textContent = ''; }, 1200);
             } catch (e) {
@@ -364,11 +269,11 @@
             }
         }
 
-        async function loadState() {
+        function loadState() {
             try {
-                const result = await window.storage.get(STORAGE_KEY, false);
-                if (result && result.value) {
-                    const data = JSON.parse(result.value);
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const data = JSON.parse(raw);
                     if (data.categories) categories = data.categories;
                     if (data.inputValues) inputValues = data.inputValues;
                     if (data.incomeValue !== undefined) incomeInput.value = data.incomeValue;
