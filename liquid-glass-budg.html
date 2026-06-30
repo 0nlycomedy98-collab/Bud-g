@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquid Glass Budget Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        :root {
+            color-scheme: light;
+            --ink: #070707;
+            --glass: rgba(255, 255, 255, 0.31);
+            --stroke: rgba(255, 255, 255, 0.72);
+            --shadow: rgba(19, 21, 25, 0.18);
+            --edge-gap: clamp(10px, 2.5vw, 24px);
+            --content-max: 1100px;
+        }
+
+        body {
+            min-height: 100vh;
+            min-height: 100dvh;
+            background: #ececec;
+            color: var(--ink);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        .page {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            min-height: 100dvh;
+            isolation: isolate;
+        }
+
+        .background {
+            position: fixed;
+            inset: 0;
+            z-index: -3;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.46)),
+                url("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop") center / cover no-repeat;
+        }
+
+        .background::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.54), transparent 30%),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0.05) 42%, rgba(255, 255, 255, 0.58));
+            pointer-events: none;
+        }
+
+        .glass {
+            border: 1px solid var(--stroke);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.56), var(--glass));
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.88),
+                inset 0 -18px 34px rgba(255, 255, 255, 0.18),
+                0 24px 70px var(--shadow);
+            -webkit-backdrop-filter: blur(24px) saturate(155%) url(#liquid-refraction);
+            backdrop-filter: blur(24px) saturate(155%) url(#liquid-refraction);
+        }
+
+        .glass-inner {
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        /* --- RESPONSIVE FIX ---
+           Previously: margin: var(--edge-gap) var(--edge-gap) 0 var(--edge-gap)
+           This explicit 4-value margin overrides Tailwind's mx-auto centering,
+           so the element never re-centers or scales smoothly across widths.
+           Fix: separate horizontal centering (auto) from vertical spacing,
+           and size width using min()/clamp against the viewport instead of
+           a hardcoded max-width class. */
+        header.glass-header {
+            width: min(100% - (var(--edge-gap) * 2), var(--content-max));
+            margin: var(--edge-gap) auto 0 auto;
+            border-radius: clamp(16px, 2vw, 24px);
+            padding: clamp(10px, 1.6vw, 16px) clamp(14px, 2.4vw, 28px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            z-index: 50;
+        }
+
+        .hero {
+            display: flex;
+            flex: 1;
+            align-items: stretch;
+            padding-top: 10px;
+        }
+
+        .hero-panel {
+            width: min(100% - (var(--edge-gap) * 2), var(--content-max));
+            margin: 0 auto var(--edge-gap) auto;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: clamp(16px, 4vw, 40px);
+            border-radius: clamp(22px, 3.5vw, 42px);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
+
+        h1.app-title {
+            width: 100%;
+            font-size: clamp(28px, 7vw, 64px);
+            line-height: 0.95;
+            font-weight: 900;
+            letter-spacing: -1px;
+            text-align: center;
+            text-transform: uppercase;
+            overflow-wrap: anywhere;
+            margin-bottom: clamp(16px, 3vw, 30px);
+            color: rgba(0,0,0,0.8);
+            text-shadow: 2px 2px 10px rgba(255,255,255,0.5);
+        }
+
+        input[type="number"], input[type="text"] {
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            color: var(--ink);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 0;
+        }
+        input[type="number"]:focus, input[type="text"]:focus {
+            background: rgba(255, 255, 255, 0.8);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+        }
+
+        .progress-bar { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        .svg-filter-container { position: absolute; width: 0; height: 0; pointer-events: none; }
+
+        .modal-overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(8px); }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content { transform: scale(0.95) translateY(20px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .modal-overlay.active .modal-content { transform: scale(1) translateY(0); }
+
+        .expense-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: nowrap;
+        }
+        .expense-row label {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .expense-input {
+            flex: 0 0 auto;
+            width: clamp(80px, 22vw, 120px);
+        }
+
+        .save-indicator {
+            font-size: 11px;
+            color: rgba(0,0,0,0.45);
+            text-align: right;
+            min-height: 14px;
+            width: min(100% - (var(--edge-gap) * 2), var(--content-max));
+            margin: 4px auto 0 auto;
+        }
+
+        @media (max-width: 720px) {
+            .hero-panel { border-radius: 22px; }
+            header.glass-header { border-radius: 16px; }
+            .app-title { margin-bottom: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <div class="background" aria-hidden="true"></div>
+
+        <header class="glass glass-header">
+            <div class="text-2xl font-black tracking-tighter text-gray-800 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 256 256"><path d="M216,64V216a24,24,0,0,1-24,24H64a24,24,0,0,1-24-24V64A24,24,0,0,1,64,40H192A24,24,0,0,1,216,64Zm-24,0H64V216H192ZM168,112v64a8,8,0,0,1-16,0V136a24,24,0,0,0-48,0v40a8,8,0,0,1-16,0V112a8,8,0,0,1,16,0v8.53A39.9,39.9,0,0,1,168,112Z"></path></svg>
+                Budget.
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="openSettings()" class="p-2 rounded-full bg-white/40 hover:bg-white/60 transition-colors shadow-sm" aria-label="Settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm88-29.84q.06-2.16,0-4.32l14.92-18.64a8,8,0,0,0,1.48-7.06,107.21,107.21,0,0,0-10.88-26.25,8,8,0,0,0-6-3.93l-23.72-2.61a89.21,89.21,0,0,0-14.61-25.3l4.63-23.43a8,8,0,0,0-2.22-7.27,105.75,105.75,0,0,0-23.16-16.15,8,8,0,0,0-7.14-.38L128,32.41l-21.3-12.42a8,8,0,0,0-7.14.38,105.75,105.75,0,0,0-23.16,16.15,8,8,0,0,0-2.22,7.27l4.63,23.43a89.21,89.21,0,0,0-14.61,25.3l-23.72,2.61a8,8,0,0,0-6,3.93,107.21,107.21,0,0,0-10.88,26.25,8,8,0,0,0,1.48,7.06L39.88,126q-.06,2.16,0,4.32L24.93,149a8,8,0,0,0-1.48,7.06,107.21,107.21,0,0,0,10.88,26.25,8,8,0,0,0,6,3.93l23.72,2.61a89.21,89.21,0,0,0,14.61,25.3l-4.63,23.43a8,8,0,0,0,2.22,7.27,105.75,105.75,0,0,0,23.16,16.15,8,8,0,0,0,7.14.38L128,248.91l21.3,12.42a8,8,0,0,0,7.14-.38,105.75,105.75,0,0,0,23.16-16.15,8,8,0,0,0,2.22-7.27l-4.63-23.43a89.21,89.21,0,0,0,14.61-25.3l23.72-2.61a8,8,0,0,0,6-3.93,107.21,107.21,0,0,0,10.88-26.25,8,8,0,0,0-1.48-7.06ZM128,232a76,76,0,1,1,76-76A76.08,76.08,0,0,1,128,232Z"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <section class="hero" id="story">
+            <div class="hero-panel glass custom-scrollbar relative z-10">
+                <h1 class="app-title">Budget Planner</h1>
+
+                <div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mt-2">
+
+                    <div class="lg:col-span-2 space-y-6 min-w-0">
+                        <div class="glass-inner p-5 rounded-2xl">
+                            <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Monthly Net Income ($)</label>
+                            <input type="number" id="income" class="w-full p-3 rounded-xl text-xl shadow-inner" value="0" placeholder="e.g., 4000">
+                        </div>
+
+                        <div id="needs-container"></div>
+                        <div id="wants-container"></div>
+                        <div id="savings-container"></div>
+                    </div>
+
+                    <div class="relative min-w-0">
+                        <div class="glass-inner p-6 rounded-3xl lg:sticky lg:top-0 shadow-xl border border-white/80 bg-white/50 backdrop-blur-md">
+                            <h2 class="text-2xl font-black text-gray-900 mb-6 border-b border-gray-300/50 pb-2">Summary</h2>
+
+                            <div class="space-y-5">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-500 uppercase">Total Income</p>
+                                    <p id="summary-income" class="text-2xl font-black text-gray-800">$0.00</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-xs font-bold text-gray-500 uppercase">Total Expenses</p>
+                                    <p id="summary-expenses" class="text-2xl font-black text-gray-800">$0.00</p>
+                                </div>
+
+                                <div class="pt-5 border-t border-gray-300/50">
+                                    <p class="text-xs font-bold text-gray-500 uppercase">Remaining Balance</p>
+                                    <p id="summary-remaining" class="text-4xl font-black text-gray-800 drop-shadow-md">$0.00</p>
+                                </div>
+                            </div>
+
+                            <div class="mt-8 bg-white/40 p-4 rounded-2xl border border-white/60">
+                                <h3 class="text-sm font-black mb-4 text-gray-800 uppercase tracking-wide">Your Allocation</h3>
+
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="flex justify-between text-sm font-bold text-gray-700 mb-1">
+                                            <span>Needs</span>
+                                            <span id="needs-pct">0%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200/60 rounded-full h-3 shadow-inner">
+                                            <div id="needs-bar" class="bg-gradient-to-r from-red-400 to-red-500 h-3 rounded-full progress-bar shadow-sm" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div class="flex justify-between text-sm font-bold text-gray-700 mb-1">
+                                            <span>Wants</span>
+                                            <span id="wants-pct">0%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200/60 rounded-full h-3 shadow-inner">
+                                            <div id="wants-bar" class="bg-gradient-to-r from-yellow-400 to-yellow-500 h-3 rounded-full progress-bar shadow-sm" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div class="flex justify-between text-sm font-bold text-gray-700 mb-1">
+                                            <span>Savings</span>
+                                            <span id="savings-pct">0%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200/60 rounded-full h-3 shadow-inner">
+                                            <div id="savings-bar" class="bg-gradient-to-r from-green-400 to-green-500 h-3 rounded-full progress-bar shadow-sm" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <p class="save-indicator" id="save-indicator"></p>
+
+        <div id="settings-modal" class="fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-4 bg-black/30">
+            <div class="absolute inset-0" onclick="closeSettings()"></div>
+            <div class="glass modal-content relative w-full max-w-2xl max-h-[85vh] overflow-y-auto custom-scrollbar p-6 lg:p-8 rounded-[32px] flex flex-col gap-6">
+
+                <div class="flex justify-between items-center border-b border-gray-400/30 pb-4">
+                    <h2 class="text-3xl font-black text-gray-900">Edit Categories</h2>
+                    <button onclick="closeSettings()" class="p-2 rounded-full bg-black/5 hover:bg-black/10 transition-colors text-gray-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"></path></svg>
+                    </button>
+                </div>
+
+                <div id="message-box" class="hidden p-3 rounded-xl bg-red-100/80 border border-red-300 text-red-800 font-bold text-sm text-center"></div>
+
+                <div class="space-y-8" id="settings-lists"></div>
+
+                <div class="mt-4 pt-4 border-t border-gray-400/30 flex justify-end">
+                    <button onclick="closeSettings()" class="bg-gray-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-800 shadow-lg transition-transform transform active:scale-95">Save & Close</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <svg class="svg-filter-container" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <filter id="liquid-refraction">
+                <feTurbulence type="fractalNoise" baseFrequency="0.018 0.026" numOctaves="2" seed="7" result="noise"></feTurbulence>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+            </filter>
+        </defs>
+    </svg>
+
+    <script>
+        const STORAGE_KEY = 'liquid-budget-state';
+
+        let categories = {
+            needs: ["Rent/Mortgage", "Utilities & Bills", "Groceries", "Transportation"],
+            wants: ["Dining Out", "Entertainment", "Shopping/Hobbies"],
+            savings: ["Emergency Fund", "Investments", "Debt Repayment"]
+        };
+
+        let inputValues = {};
+
+        const categoryConfig = {
+            needs: { title: "Needs", color: "red", target: "50%" },
+            wants: { title: "Wants", color: "yellow", target: "30%" },
+            savings: { title: "Savings & Debt", color: "green", target: "20%" }
+        };
+
+        const incomeInput = document.getElementById('income');
+        const saveIndicator = document.getElementById('save-indicator');
+
+        let saveTimeout;
+        function debouncedSave() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveState, 600);
+        }
+
+        async function saveState() {
+            try {
+                await window.storage.set(STORAGE_KEY, JSON.stringify({
+                    categories,
+                    inputValues,
+                    incomeValue: incomeInput.value || 0
+                }), false);
+                saveIndicator.textContent = 'Saved';
+                setTimeout(() => { saveIndicator.textContent = ''; }, 1200);
+            } catch (e) {
+                saveIndicator.textContent = 'Save failed';
+                console.error('Storage error:', e);
+            }
+        }
+
+        async function loadState() {
+            try {
+                const result = await window.storage.get(STORAGE_KEY, false);
+                if (result && result.value) {
+                    const data = JSON.parse(result.value);
+                    if (data.categories) categories = data.categories;
+                    if (data.inputValues) inputValues = data.inputValues;
+                    if (data.incomeValue !== undefined) incomeInput.value = data.incomeValue;
+                }
+            } catch (e) {
+                console.log('No saved data yet, starting fresh.');
+            }
+            renderDashboard();
+        }
+
+        function renderDashboard() {
+            Object.keys(categories).forEach(type => {
+                const container = document.getElementById(`${type}-container`);
+                const items = categories[type];
+                const config = categoryConfig[type];
+
+                let html = `
+                <div class="glass-inner p-5 rounded-2xl border-t-4 border-t-${config.color}-400 mb-6">
+                    <div class="flex justify-between items-end mb-4 border-b border-gray-300/50 pb-2 gap-3">
+                        <div class="min-w-0">
+                            <h2 class="text-xl font-extrabold text-gray-800">${config.title}</h2>
+                            <p class="text-xs font-semibold text-${config.color}-600 uppercase tracking-wider">Target: ${config.target}</p>
+                        </div>
+                        <span id="${type}-total" class="text-2xl font-black text-gray-800 flex-shrink-0">$0.00</span>
+                    </div>
+                    <div class="space-y-3">
+                `;
+
+                items.forEach(item => {
+                    const val = inputValues[item] || '';
+                    html += `
+                        <div class="expense-row">
+                            <label class="font-medium text-gray-700 truncate">${item}</label>
+                            <input type="number" class="expense-input ${type} p-2 rounded-lg text-right shadow-sm" data-name="${item}" value="${val}">
+                        </div>
+                    `;
+                });
+
+                html += `</div></div>`;
+                container.innerHTML = html;
+            });
+
+            document.querySelectorAll('.expense-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    inputValues[e.target.dataset.name] = e.target.value;
+                    calculateBudget();
+                    debouncedSave();
+                });
+            });
+
+            calculateBudget();
+        }
+
+        function calculateBudget() {
+            const income = parseFloat(incomeInput.value) || 0;
+            let totals = { needs: 0, wants: 0, savings: 0 };
+
+            Object.keys(totals).forEach(type => {
+                let sum = 0;
+                document.querySelectorAll(`.${type}`).forEach(input => sum += parseFloat(input.value) || 0);
+                totals[type] = sum;
+                document.getElementById(`${type}-total`).innerText = `$${sum.toFixed(2)}`;
+            });
+
+            const totalExpenses = totals.needs + totals.wants + totals.savings;
+            const remaining = income - totalExpenses;
+
+            document.getElementById('summary-income').innerText = `$${income.toFixed(2)}`;
+            document.getElementById('summary-expenses').innerText = `$${totalExpenses.toFixed(2)}`;
+
+            const remainingEl = document.getElementById('summary-remaining');
+            remainingEl.innerText = `$${remaining.toFixed(2)}`;
+            remainingEl.className = remaining >= 0
+                ? "text-4xl font-black text-green-600 drop-shadow-md"
+                : "text-4xl font-black text-red-600 drop-shadow-md";
+
+            Object.keys(totals).forEach(type => {
+                const pct = income > 0 ? Math.min((totals[type] / income) * 100, 100) : 0;
+                document.getElementById(`${type}-pct`).innerText = `${pct.toFixed(1)}%`;
+                document.getElementById(`${type}-bar`).style.width = `${pct}%`;
+            });
+        }
+
+        function renderSettings() {
+            const listContainer = document.getElementById('settings-lists');
+            let html = '';
+
+            Object.keys(categories).forEach(type => {
+                const config = categoryConfig[type];
+                html += `
+                    <div class="glass-inner p-4 rounded-2xl bg-white/40">
+                        <h3 class="text-lg font-bold text-gray-800 mb-3 uppercase tracking-wide border-b border-gray-400/20 pb-2">${config.title}</h3>
+                        <ul class="space-y-2 mb-4">
+                `;
+
+                categories[type].forEach((item, index) => {
+                    html += `
+                        <li class="flex justify-between items-center bg-white/50 p-2 px-3 rounded-lg border border-gray-100/50 gap-2">
+                            <span class="font-medium text-gray-700 truncate">${item}</span>
+                            <button onclick="deleteItem('${type}', ${index})" class="text-red-500 hover:text-red-700 transition-colors p-1 flex-shrink-0" aria-label="Delete">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256"><path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"></path></svg>
+                            </button>
+                        </li>
+                    `;
+                });
+
+                html += `
+                        </ul>
+                        <div class="flex gap-2">
+                            <input type="text" id="add-${type}-input" class="flex-1 p-2 rounded-lg text-sm min-w-0" placeholder="New ${config.title} category...">
+                            <button onclick="addItem('${type}')" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-700 transition-colors flex-shrink-0">Add</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+        }
+
+        window.showMessage = function(msg) {
+            const box = document.getElementById('message-box');
+            box.innerText = msg;
+            box.classList.remove('hidden');
+            setTimeout(() => { box.classList.add('hidden'); }, 3000);
+        }
+
+        window.deleteItem = function(type, index) {
+            const itemToDelete = categories[type][index];
+            categories[type].splice(index, 1);
+            delete inputValues[itemToDelete];
+            saveState();
+            renderSettings();
+        }
+
+        window.addItem = function(type) {
+            const inputEl = document.getElementById(`add-${type}-input`);
+            const val = inputEl.value.trim();
+
+            if (val === '') {
+                window.showMessage("Category name cannot be empty.");
+                return;
+            }
+
+            let exists = false;
+            Object.values(categories).forEach(arr => {
+                if (arr.includes(val)) exists = true;
+            });
+
+            if (exists) {
+                window.showMessage("This category already exists.");
+                return;
+            }
+
+            categories[type].push(val);
+            inputValues[val] = '';
+            saveState();
+            renderSettings();
+        }
+
+        const modal = document.getElementById('settings-modal');
+
+        window.openSettings = function() {
+            renderSettings();
+            modal.classList.add('active');
+        }
+
+        window.closeSettings = function() {
+            modal.classList.remove('active');
+            renderDashboard();
+        }
+
+        incomeInput.addEventListener('input', () => {
+            calculateBudget();
+            debouncedSave();
+        });
+
+        loadState();
+    </script>
+</body>
+</html>
